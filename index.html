@@ -326,6 +326,33 @@
 </div>
 
 <script>
+  // ── Click Sound (synthesized — no external files needed) ─
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playClick() {
+    try {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const bufferSize = Math.floor(audioCtx.sampleRate * 0.04); // 40ms
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 8);
+      }
+      const source = audioCtx.createBufferSource();
+      source.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 1800;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(1.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      source.start();
+    } catch(e) {}
+  }
+
   // ── State ──────────────────────────────────────────────
   let totalMs   = 10 * 60 * 1000;
   let increment = 0; // seconds
@@ -426,6 +453,7 @@
     if (active === null) {
       // Game hasn't started yet — first tap starts the game
       // Whoever taps first means THEY moved, so opponent's clock runs
+      playClick();
       active = opponent;
       paused = false;
       startTick();
@@ -437,6 +465,8 @@
 
     // Only the active player's panel should respond
     if (active !== player) return;
+
+    playClick();
 
     // Apply increment to the player who just moved
     if (increment > 0) {
