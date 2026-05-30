@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a1a1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Chess Clock</title>
+  <link rel="manifest" href="manifest.json" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%; width: 100%;
+      overflow: hidden;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ── PLAYER PANELS ── */
+    .panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: filter 0.15s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* White player (top, rotated) */
+    #white {
+      background: #f5f0e8;
+      border-bottom: 3px solid #1a1a1a;
+      transform: rotate(180deg);
+    }
+
+    /* Black player (bottom) */
+    #black {
+      background: #1a1a1a;
+      border-top: 3px solid #1a1a1a;
+    }
+
+    /* Active glow */
+    #white.active  { background: #fffdf7; filter: brightness(1.03); }
+    #black.active  { background: #252525; filter: brightness(1.1); }
+
+    /* Dimmed when not your turn */
+    #white.inactive { filter: brightness(0.85); }
+    #black.inactive { filter: brightness(0.6); }
+
+    /* Flagged (time ran out) */
+    #white.flagged { background: #e74c3c; }
+    #black.flagged { background: #c0392b; }
+
+    .time {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: min(22vw, 18vh);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    #white .time { color: #1a1a1a; }
+    #black .time { color: #f5f0e8; }
+
+    #white.flagged .time, #black.flagged .time { color: #fff; }
+
+    .label {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: min(3vw, 2vh);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-top: 0.6em;
+      opacity: 0.45;
+    }
+
+    #white .label { color: #1a1a1a; }
+    #black .label { color: #f5f0e8; }
+
+    /* ── LOW TIME WARNING pulse ── */
+    @keyframes pulse-white {
+      0%, 100% { background: #f5f0e8; }
+      50%       { background: #ffd5d5; }
+    }
+    @keyframes pulse-black {
+      0%, 100% { background: #1a1a1a; }
+      50%       { background: #4a1a1a; }
+    }
+    #white.low  { animation: pulse-white 1s ease-in-out infinite; }
+    #black.low  { animation: pulse-black 1s ease-in-out infinite; }
+
+    /* ── DIVIDER / CONTROL BAR ── */
+    #controls {
+      height: 64px;
+      min-height: 64px;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 10;
+      padding: 0 8px;
+      gap: 6px;
+    }
+
+    .btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #f5f0e8;
+      background: transparent;
+      border: 1.5px solid rgba(245,240,232,0.3);
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      white-space: nowrap;
+      flex: 1;
+      max-width: 110px;
+    }
+    .btn:hover, .btn:active { background: rgba(245,240,232,0.12); border-color: rgba(245,240,232,0.7); }
+    .btn.primary { background: rgba(245,240,232,0.15); border-color: rgba(245,240,232,0.6); }
+
+    /* ── SETTINGS OVERLAY ── */
+    #settings-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    #settings-overlay.open { display: flex; }
+
+    #settings-box {
+      background: #f5f0e8;
+      border-radius: 12px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 380px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    #settings-box h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.1em;
+      color: #1a1a1a;
+      margin-bottom: 20px;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .preset-btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1a1a1a;
+      background: #e8e3db;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      padding: 10px 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .preset-btn:hover, .preset-btn.selected { background: #1a1a1a; color: #f5f0e8; border-color: #1a1a1a; }
+
+    .custom-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .custom-row label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+      flex: 1;
+    }
+    .custom-row input {
+      width: 64px;
+      padding: 8px;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+      color: #1a1a1a;
+      background: #fff;
+    }
+
+    .increment-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .increment-row label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+      flex: 1;
+    }
+    .increment-row input {
+      width: 64px;
+      padding: 8px;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+      color: #1a1a1a;
+      background: #fff;
+    }
+
+    .settings-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .settings-actions button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+    }
+    #cancel-btn { background: #e8e3db; color: #1a1a1a; }
+    #apply-btn  { background: #1a1a1a; color: #f5f0e8; }
+
+    /* ── FLAG MESSAGE ── */
+    .flag-msg {
+      font-family: 'Inter', sans-serif;
+      font-size: min(4vw, 3vh);
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #fff;
+      margin-top: 0.4em;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .flagged .flag-msg { opacity: 1; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- White panel (top, rotated 180°) -->
+  <div class="panel" id="white">
+    <div class="time" id="white-time">10:00</div>
+    <div class="label" id="white-label">White</div>
+    <div class="flag-msg">Time's Up!</div>
+  </div>
+
+  <!-- Control bar -->
+  <div id="controls">
+    <button class="btn" id="pause-btn">Pause</button>
+    <button class="btn primary" id="reset-btn">Reset</button>
+    <button class="btn" id="settings-btn">Settings</button>
+  </div>
+
+  <!-- Black panel (bottom) -->
+  <div class="panel" id="black">
+    <div class="time" id="black-time">10:00</div>
+    <div class="label" id="black-label">Black</div>
+    <div class="flag-msg">Time's Up!</div>
+  </div>
+</div>
+
+<!-- Settings overlay -->
+<div id="settings-overlay">
+  <div id="settings-box">
+    <h2>Time Control</h2>
+
+    <div class="preset-grid">
+      <div class="preset-btn" data-min="1" data-inc="0">Bullet<br/>1 min</div>
+      <div class="preset-btn" data-min="2" data-inc="1">Bullet<br/>2+1</div>
+      <div class="preset-btn" data-min="3" data-inc="2">Blitz<br/>3+2</div>
+      <div class="preset-btn" data-min="5" data-inc="0">Blitz<br/>5 min</div>
+      <div class="preset-btn selected" data-min="10" data-inc="0">Rapid<br/>10 min</div>
+      <div class="preset-btn" data-min="15" data-inc="10">Rapid<br/>15+10</div>
+      <div class="preset-btn" data-min="30" data-inc="0">Classic<br/>30 min</div>
+      <div class="preset-btn" data-min="60" data-inc="0">Long<br/>60 min</div>
+      <div class="preset-btn" data-min="90" data-inc="30">Long<br/>90+30</div>
+    </div>
+
+    <div class="custom-row">
+      <label>Custom minutes</label>
+      <input type="number" id="custom-min" min="1" max="180" value="10" />
+    </div>
+    <div class="increment-row">
+      <label>Increment (sec)</label>
+      <input type="number" id="custom-inc" min="0" max="60" value="0" />
+    </div>
+
+    <div class="settings-actions">
+      <button id="cancel-btn">Cancel</button>
+      <button id="apply-btn">Apply &amp; Reset</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────
+  let totalMs   = 10 * 60 * 1000;
+  let increment = 0; // seconds
+  let whiteMs   = totalMs;
+  let blackMs   = totalMs;
+  let active    = null;   // 'white' | 'black' | null
+  let paused    = false;
+  let gameOver  = false;
+  let lastTick  = null;
+  let rafId     = null;
+
+  const LOW_TIME = 30 * 1000; // 30 seconds
+
+  // ── DOM refs ────────────────────────────────────────────
+  const whitePanel  = document.getElementById('white');
+  const blackPanel  = document.getElementById('black');
+  const whiteDisplay = document.getElementById('white-time');
+  const blackDisplay = document.getElementById('black-time');
+  const pauseBtn    = document.getElementById('pause-btn');
+  const resetBtn    = document.getElementById('reset-btn');
+  const settingsBtn = document.getElementById('settings-btn');
+  const overlay     = document.getElementById('settings-overlay');
+  const applyBtn    = document.getElementById('apply-btn');
+  const cancelBtn   = document.getElementById('cancel-btn');
+  const customMin   = document.getElementById('custom-min');
+  const customInc   = document.getElementById('custom-inc');
+  const presetBtns  = document.querySelectorAll('.preset-btn');
+
+  // ── Helpers ─────────────────────────────────────────────
+  function fmt(ms) {
+    const totalSec = Math.ceil(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  function render() {
+    whiteDisplay.textContent = fmt(whiteMs);
+    blackDisplay.textContent = fmt(blackMs);
+
+    // Reset classes
+    ['active','inactive','flagged','low'].forEach(c => {
+      whitePanel.classList.remove(c);
+      blackPanel.classList.remove(c);
+    });
+
+    if (gameOver) {
+      if (whiteMs <= 0) whitePanel.classList.add('flagged');
+      if (blackMs <= 0) blackPanel.classList.add('flagged');
+      return;
+    }
+
+    if (active === 'white') {
+      whitePanel.classList.add('active');
+      blackPanel.classList.add('inactive');
+      if (whiteMs < LOW_TIME) whitePanel.classList.add('low');
+    } else if (active === 'black') {
+      blackPanel.classList.add('active');
+      whitePanel.classList.add('inactive');
+      if (blackMs < LOW_TIME) blackPanel.classList.add('low');
+    }
+  }
+
+  // ── Tick ────────────────────────────────────────────────
+  function tick(timestamp) {
+    if (paused || !active || gameOver) { lastTick = null; return; }
+
+    if (lastTick === null) { lastTick = timestamp; }
+    const delta = timestamp - lastTick;
+    lastTick = timestamp;
+
+    if (active === 'white') {
+      whiteMs = Math.max(0, whiteMs - delta);
+      if (whiteMs === 0) { gameOver = true; render(); return; }
+    } else {
+      blackMs = Math.max(0, blackMs - delta);
+      if (blackMs === 0) { gameOver = true; render(); return; }
+    }
+
+    render();
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function startTick() {
+    if (rafId) cancelAnimationFrame(rafId);
+    lastTick = null;
+    rafId = requestAnimationFrame(tick);
+  }
+
+  // ── Panel tap ───────────────────────────────────────────
+  function handleTap(player) {
+    if (gameOver) return;
+
+    // First tap: start the opponent's clock
+    // (touching white means white just moved → start black's clock)
+    const opponent = player === 'white' ? 'black' : 'white';
+
+    if (active === null) {
+      // Game hasn't started yet — first tap starts the game
+      // Whoever taps first means THEY moved, so opponent's clock runs
+      active = opponent;
+      paused = false;
+      startTick();
+      render();
+      return;
+    }
+
+    if (paused) return; // must unpause via button
+
+    // Only the active player's panel should respond
+    if (active !== player) return;
+
+    // Apply increment to the player who just moved
+    if (increment > 0) {
+      if (player === 'white') whiteMs += increment * 1000;
+      else blackMs += increment * 1000;
+    }
+
+    active = opponent;
+    lastTick = null;
+    render();
+  }
+
+  whitePanel.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handleTap('white');
+  });
+
+  blackPanel.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handleTap('black');
+  });
+
+  // ── Pause / Resume ──────────────────────────────────────
+  pauseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (gameOver || active === null) return;
+    paused = !paused;
+    pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+    if (!paused) startTick();
+    render();
+  });
+
+  // ── Reset ───────────────────────────────────────────────
+  function resetGame() {
+    cancelAnimationFrame(rafId);
+    whiteMs  = totalMs;
+    blackMs  = totalMs;
+    active   = null;
+    paused   = false;
+    gameOver = false;
+    lastTick = null;
+    pauseBtn.textContent = 'Pause';
+    render();
+  }
+
+  resetBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    resetGame();
+  });
+
+  // ── Settings ────────────────────────────────────────────
+  settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (active !== null && !paused && !gameOver) {
+      paused = true;
+      pauseBtn.textContent = 'Resume';
+    }
+    overlay.classList.add('open');
+  });
+
+  cancelBtn.addEventListener('click', () => overlay.classList.remove('open'));
+
+  applyBtn.addEventListener('click', () => {
+    const mins = Math.max(1, parseInt(customMin.value) || 10);
+    const inc  = Math.max(0, parseInt(customInc.value) || 0);
+    totalMs    = mins * 60 * 1000;
+    increment  = inc;
+    overlay.classList.remove('open');
+    resetGame();
+  });
+
+  presetBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      presetBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      customMin.value = btn.dataset.min;
+      customInc.value = btn.dataset.inc;
+    });
+  });
+
+  // Sync custom inputs back to deselect presets
+  [customMin, customInc].forEach(inp => {
+    inp.addEventListener('input', () => {
+      presetBtns.forEach(b => b.classList.remove('selected'));
+    });
+  });
+
+  // ── Service Worker (offline support) ─────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  // ── Init ─────────────────────────────────────────────────
+  render();
+
+  // Keep screen awake if supported
+  if ('wakeLock' in navigator) {
+    async function requestWakeLock() {
+      try { await navigator.wakeLock.request('screen'); } catch(_) {}
+    }
+    requestWakeLock();
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') requestWakeLock();
+    });
+  }
+</script>
+</body>
+</html>
