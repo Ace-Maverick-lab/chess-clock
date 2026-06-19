@@ -35,50 +35,24 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: filter 0.15s ease;
       position: relative;
       overflow: hidden;
+      transition: filter 0.15s ease, background 0.3s ease;
     }
 
-    /* White player (top, rotated) */
-    #white {
-      background: #f5f0e8;
-      border-bottom: 3px solid #1a1a1a;
-      transform: rotate(180deg);
-    }
+    #white { transform: rotate(180deg); }
 
-    /* Black player (bottom) */
-    #black {
-      background: #1a1a1a;
-      border-top: 3px solid #1a1a1a;
-    }
-
-    /* Active glow */
-    #white.active  { background: #fffdf7; filter: brightness(1.03); }
-    #black.active  { background: #252525; filter: brightness(1.1); }
-
-    /* Dimmed when not your turn */
-    #white.inactive { filter: brightness(0.85); }
-    #black.inactive { filter: brightness(0.6); }
-
-    /* Flagged (time ran out) */
-    #white.flagged { background: #e74c3c; }
-    #black.flagged { background: #c0392b; }
+    .panel.inactive { filter: brightness(0.72); }
+    .panel.flagged-panel { filter: none !important; }
 
     .time {
       font-family: 'Bebas Neue', sans-serif;
       font-size: min(22vw, 18vh);
       letter-spacing: 0.04em;
       line-height: 1;
-      transition: color 0.2s;
     }
 
-    #white .time { color: #1a1a1a; }
-    #black .time { color: #f5f0e8; }
-
-    #white.flagged .time, #black.flagged .time { color: #fff; }
-
-    .label {
+    .player-label {
       font-family: 'Inter', sans-serif;
       font-weight: 600;
       font-size: min(3vw, 2vh);
@@ -88,25 +62,34 @@
       opacity: 0.45;
     }
 
-    #white .label { color: #1a1a1a; }
-    #black .label { color: #f5f0e8; }
-
-    /* ── LOW TIME WARNING pulse ── */
-    @keyframes pulse-white {
-      0%, 100% { background: #f5f0e8; }
-      50%       { background: #ffd5d5; }
+    .flag-msg {
+      font-family: 'Inter', sans-serif;
+      font-size: min(4vw, 3vh);
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-top: 0.4em;
+      opacity: 0;
+      transition: opacity 0.3s;
+      color: #fff;
     }
-    @keyframes pulse-black {
-      0%, 100% { background: #1a1a1a; }
-      50%       { background: #4a1a1a; }
-    }
-    #white.low  { animation: pulse-white 1s ease-in-out infinite; }
-    #black.low  { animation: pulse-black 1s ease-in-out infinite; }
+    .flagged-panel .flag-msg { opacity: 1; }
 
-    /* ── DIVIDER / CONTROL BAR ── */
+    /* ── LOW TIME pulse (injected dynamically per theme) ── */
+    @keyframes pulse-p1 {
+      0%,100% { background: var(--p1-bg); }
+      50%      { background: var(--p1-low); }
+    }
+    @keyframes pulse-p2 {
+      0%,100% { background: var(--p2-bg); }
+      50%      { background: var(--p2-low); }
+    }
+    #white.low-time { animation: pulse-p1 1s ease-in-out infinite; }
+    #black.low-time { animation: pulse-p2 1s ease-in-out infinite; }
+
+    /* ── CONTROL BAR ── */
     #controls {
-      height: 64px;
-      min-height: 64px;
+      height: 64px; min-height: 64px;
       background: #1a1a1a;
       display: flex;
       align-items: center;
@@ -118,8 +101,7 @@
 
     .btn {
       font-family: 'Inter', sans-serif;
-      font-size: 11px;
-      font-weight: 600;
+      font-size: 11px; font-weight: 600;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: #f5f0e8;
@@ -130,55 +112,95 @@
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s;
       white-space: nowrap;
-      flex: 1;
-      max-width: 110px;
+      flex: 1; max-width: 110px;
     }
-    .btn:hover, .btn:active { background: rgba(245,240,232,0.12); border-color: rgba(245,240,232,0.7); }
+    .btn:active { background: rgba(245,240,232,0.12); border-color: rgba(245,240,232,0.7); }
     .btn.primary { background: rgba(245,240,232,0.15); border-color: rgba(245,240,232,0.6); }
 
     /* ── SETTINGS OVERLAY ── */
     #settings-overlay {
       display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.85);
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88);
       z-index: 100;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
-      padding: 24px;
+      padding: 0;
     }
     #settings-overlay.open { display: flex; }
 
-    #settings-box {
-      background: #f5f0e8;
-      border-radius: 12px;
-      padding: 28px 24px;
-      width: 100%;
-      max-width: 380px;
+    #settings-sheet {
+      background: #f0ebe2;
+      border-radius: 16px 16px 0 0;
+      width: 100%; max-width: 480px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       font-family: 'Inter', sans-serif;
     }
 
-    #settings-box h2 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 2rem;
-      letter-spacing: 0.1em;
-      color: #1a1a1a;
-      margin-bottom: 20px;
+    /* drag handle */
+    #sheet-handle {
+      width: 40px; height: 4px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 2px;
+      margin: 12px auto 0;
+      flex-shrink: 0;
     }
 
+    /* ── TABS ── */
+    #settings-tabs {
+      display: flex;
+      border-bottom: 2px solid rgba(0,0,0,0.1);
+      flex-shrink: 0;
+      margin-top: 8px;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px 4px;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-align: center;
+      color: rgba(0,0,0,0.4);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; }
+
+    /* ── TAB PANELS ── */
+    #settings-body {
+      overflow-y: auto;
+      padding: 20px 20px 28px;
+      flex: 1;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.1em;
+      color: #1a1a1a;
+      margin-bottom: 12px;
+    }
+
+    /* Time presets */
     .preset-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       margin-bottom: 20px;
     }
-
     .preset-btn {
       font-family: 'Inter', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 12px; font-weight: 600;
       color: #1a1a1a;
-      background: #e8e3db;
+      background: #e2ddd5;
       border: 2px solid transparent;
       border-radius: 8px;
       padding: 10px 6px;
@@ -186,23 +208,21 @@
       text-align: center;
       transition: all 0.15s;
     }
-    .preset-btn:hover, .preset-btn.selected { background: #1a1a1a; color: #f5f0e8; border-color: #1a1a1a; }
+    .preset-btn.selected,
+    .preset-btn:active { background: #1a1a1a; color: #f5f0e8; border-color: #1a1a1a; }
 
-    .custom-row {
+    .field-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
-    .custom-row label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #1a1a1a;
-      flex: 1;
+    .field-row label {
+      font-size: 13px; font-weight: 600;
+      color: #1a1a1a; flex: 1;
     }
-    .custom-row input {
-      width: 64px;
-      padding: 8px;
+    .field-row input {
+      width: 68px; padding: 8px;
       border: 2px solid #ccc;
       border-radius: 6px;
       font-size: 15px;
@@ -212,113 +232,308 @@
       background: #fff;
     }
 
-    .increment-row {
+    /* Theme swatches */
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .theme-card {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+    }
+    .theme-card.selected { border-color: #1a1a1a; transform: scale(1.03); }
+    .theme-card:active { transform: scale(0.98); }
+    .theme-preview {
+      display: flex;
+      flex-direction: column;
+      height: 72px;
+    }
+    .theme-preview .half {
+      flex: 1;
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.06em;
     }
-    .increment-row label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #1a1a1a;
-      flex: 1;
-    }
-    .increment-row input {
-      width: 64px;
-      padding: 8px;
-      border: 2px solid #ccc;
-      border-radius: 6px;
-      font-size: 15px;
-      font-family: 'Inter', sans-serif;
+    .theme-name {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       text-align: center;
+      padding: 6px 4px;
+      background: #e2ddd5;
       color: #1a1a1a;
-      background: #fff;
     }
 
-    .settings-actions {
+    /* Sound options */
+    .sound-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sound-row {
+      display: flex;
+      align-items: center;
+      background: #e2ddd5;
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+      gap: 12px;
+    }
+    .sound-row.selected { border-color: #1a1a1a; background: #1a1a1a; }
+    .sound-row.selected .sound-name { color: #f5f0e8; }
+    .sound-row.selected .sound-desc { color: rgba(245,240,232,0.6); }
+    .sound-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .sound-name {
+      font-size: 13px; font-weight: 600;
+      color: #1a1a1a;
+    }
+    .sound-desc {
+      font-size: 11px; color: rgba(0,0,0,0.45);
+      margin-top: 2px;
+    }
+    .sound-try {
+      margin-left: auto;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(0,0,0,0.4);
+      background: rgba(0,0,0,0.08);
+      border: none; border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .sound-row.selected .sound-try {
+      background: rgba(255,255,255,0.15);
+      color: rgba(245,240,232,0.8);
+    }
+
+    /* Fun mode sub-panel */
+    #fun-options {
+      display: none;
+      margin-top: 12px;
+      background: #e2ddd5;
+      border-radius: 10px;
+      padding: 14px;
+    }
+    #fun-options.visible { display: block; }
+    .fun-label {
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(0,0,0,0.5); margin-bottom: 10px;
+    }
+    .order-toggle {
+      display: flex;
+      background: rgba(0,0,0,0.08);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .order-opt {
+      flex: 1; padding: 8px 6px;
+      font-size: 12px; font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+      color: rgba(0,0,0,0.5);
+    }
+    .order-opt.selected { background: #1a1a1a; color: #f5f0e8; }
+    .fun-stats {
+      font-size: 11px; color: rgba(0,0,0,0.4);
+      margin-top: 10px; text-align: center;
+    }
+    .fun-divider {
+      height: 1px; background: rgba(0,0,0,0.1);
+      margin: 12px 0;
+    }
+    #voice-preview-btn {
+      width: 100%;
+      padding: 10px;
+      background: rgba(0,0,0,0.08);
+      border: none; border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: rgba(0,0,0,0.6);
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 2px;
+    }
+    #voice-preview-btn:active { background: rgba(0,0,0,0.15); }
+    #voice-preview-btn.speaking { background: #1a1a1a; color: #f5f0e8; }
+    #voice-info {
+      font-size: 11px; color: rgba(0,0,0,0.4);
+      margin-top: 8px; text-align: center;
+      line-height: 1.5; min-height: 30px;
+    }
+
+    /* Support tab */
+    .support-hero {
+      text-align: center;
+      padding: 8px 0 20px;
+    }
+    .support-hero .emoji { font-size: 3rem; display: block; margin-bottom: 8px; }
+    .support-hero h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem; letter-spacing: 0.1em;
+      color: #1a1a1a; margin-bottom: 8px;
+    }
+    .support-hero p {
+      font-size: 13px; color: rgba(0,0,0,0.55);
+      line-height: 1.6; max-width: 280px; margin: 0 auto;
+    }
+    .donate-btn {
+      display: block; width: 100%;
+      margin-top: 20px;
+      padding: 16px;
+      background: #1a1a1a; color: #f5f0e8;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 600;
+      letter-spacing: 0.06em;
+      border: none; border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: background 0.15s;
+    }
+    .donate-btn:active { background: #333; }
+    .donate-note {
+      font-size: 11px; color: rgba(0,0,0,0.4);
+      text-align: center; margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    /* ── BOTTOM ACTIONS ── */
+    #sheet-actions {
       display: flex;
       gap: 10px;
+      padding: 12px 20px 24px;
+      flex-shrink: 0;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      background: #f0ebe2;
     }
-    .settings-actions button {
-      flex: 1;
-      padding: 12px;
+    #sheet-actions button {
+      flex: 1; padding: 13px;
       border-radius: 8px;
       font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none;
     }
-    #cancel-btn { background: #e8e3db; color: #1a1a1a; }
+    #cancel-btn { background: #e2ddd5; color: #1a1a1a; }
     #apply-btn  { background: #1a1a1a; color: #f5f0e8; }
-
-    /* ── FLAG MESSAGE ── */
-    .flag-msg {
-      font-family: 'Inter', sans-serif;
-      font-size: min(4vw, 3vh);
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: #fff;
-      margin-top: 0.4em;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-    .flagged .flag-msg { opacity: 1; }
   </style>
 </head>
 <body>
 <div id="app">
-  <!-- White panel (top, rotated 180°) -->
   <div class="panel" id="white">
     <div class="time" id="white-time">10:00</div>
-    <div class="label" id="white-label">White</div>
+    <div class="player-label">White</div>
     <div class="flag-msg">Time's Up!</div>
   </div>
 
-  <!-- Control bar -->
   <div id="controls">
     <button class="btn" id="pause-btn">Pause</button>
     <button class="btn primary" id="reset-btn">Reset</button>
     <button class="btn" id="settings-btn">Settings</button>
   </div>
 
-  <!-- Black panel (bottom) -->
   <div class="panel" id="black">
     <div class="time" id="black-time">10:00</div>
-    <div class="label" id="black-label">Black</div>
+    <div class="player-label">Black</div>
     <div class="flag-msg">Time's Up!</div>
   </div>
 </div>
 
-<!-- Settings overlay -->
+<!-- Settings sheet -->
 <div id="settings-overlay">
-  <div id="settings-box">
-    <h2>Time Control</h2>
+  <div id="settings-sheet">
+    <div id="sheet-handle"></div>
 
-    <div class="preset-grid">
-      <div class="preset-btn" data-min="1" data-inc="0">Bullet<br/>1 min</div>
-      <div class="preset-btn" data-min="2" data-inc="1">Bullet<br/>2+1</div>
-      <div class="preset-btn" data-min="3" data-inc="2">Blitz<br/>3+2</div>
-      <div class="preset-btn" data-min="5" data-inc="0">Blitz<br/>5 min</div>
-      <div class="preset-btn selected" data-min="10" data-inc="0">Rapid<br/>10 min</div>
-      <div class="preset-btn" data-min="15" data-inc="10">Rapid<br/>15+10</div>
-      <div class="preset-btn" data-min="30" data-inc="0">Classic<br/>30 min</div>
-      <div class="preset-btn" data-min="60" data-inc="0">Long<br/>60 min</div>
-      <div class="preset-btn" data-min="90" data-inc="30">Long<br/>90+30</div>
+    <div id="settings-tabs">
+      <div class="tab active" data-tab="time">⏱ Time</div>
+      <div class="tab" data-tab="theme">🎨 Theme</div>
+      <div class="tab" data-tab="sound">🔊 Sound</div>
+      <div class="tab" data-tab="support">☕ Support</div>
     </div>
 
-    <div class="custom-row">
-      <label>Custom minutes</label>
-      <input type="number" id="custom-min" min="1" max="180" value="10" />
-    </div>
-    <div class="increment-row">
-      <label>Increment (sec)</label>
-      <input type="number" id="custom-inc" min="0" max="60" value="0" />
-    </div>
+    <div id="settings-body">
 
-    <div class="settings-actions">
+      <!-- TIME TAB -->
+      <div class="tab-panel active" id="tab-time">
+        <div class="section-title">Time Control</div>
+        <div class="preset-grid">
+          <div class="preset-btn" data-min="1"  data-inc="0">Bullet<br/>1 min</div>
+          <div class="preset-btn" data-min="2"  data-inc="1">Bullet<br/>2+1</div>
+          <div class="preset-btn" data-min="3"  data-inc="2">Blitz<br/>3+2</div>
+          <div class="preset-btn" data-min="5"  data-inc="0">Blitz<br/>5 min</div>
+          <div class="preset-btn selected" data-min="10" data-inc="0">Rapid<br/>10 min</div>
+          <div class="preset-btn" data-min="15" data-inc="10">Rapid<br/>15+10</div>
+          <div class="preset-btn" data-min="30" data-inc="0">Classic<br/>30 min</div>
+          <div class="preset-btn" data-min="60" data-inc="0">Long<br/>60 min</div>
+          <div class="preset-btn" data-min="90" data-inc="30">Long<br/>90+30</div>
+        </div>
+        <div class="field-row">
+          <label>Custom minutes</label>
+          <input type="number" id="custom-min" min="1" max="180" value="10" />
+        </div>
+        <div class="field-row">
+          <label>Increment (seconds)</label>
+          <input type="number" id="custom-inc" min="0" max="60" value="0" />
+        </div>
+      </div>
+
+      <!-- THEME TAB -->
+      <div class="tab-panel" id="tab-theme">
+        <div class="section-title">Color Theme</div>
+        <div class="theme-grid" id="theme-grid"></div>
+      </div>
+
+      <!-- SOUND TAB -->
+      <div class="tab-panel" id="tab-sound">
+        <div class="section-title">Clock Sound</div>
+        <div class="sound-list" id="sound-list"></div>
+        <div id="fun-options">
+          <div class="fun-label">Play order</div>
+          <div class="order-toggle">
+            <div class="order-opt selected" data-order="random">🎲 Random</div>
+            <div class="order-opt" data-order="sequential">➡️ Sequential</div>
+          </div>
+          <div class="fun-stats" id="fun-stats">150 phrases across 8 personalities</div>
+          <div class="fun-divider"></div>
+          <div class="fun-label">Voice preview</div>
+          <button id="voice-preview-btn">🔊 Preview your device's voice</button>
+          <div id="voice-info">Tap to hear how the voice sounds on your device</div>
+        </div>
+      </div>
+
+      <!-- SUPPORT TAB -->
+      <div class="tab-panel" id="tab-support">
+        <div class="support-hero">
+          <span class="emoji">♟️</span>
+          <h3>Thank You for Playing</h3>
+          <p>This app was made with love for chess players everywhere. It's completely free — no ads, no tracking, no nonsense. Just two players and a clock.</p>
+          <p style="margin-top:10px;">If it's brought a smile to your game or saved you from digging out a physical clock, a small donation means the world and keeps this project alive.</p>
+          <p style="margin-top:10px;font-style:italic;color:rgba(0,0,0,0.4);">— Yogaishwar</p>
+        </div>
+        <a class="donate-btn" id="donate-link" href="https://www.paypal.me/YogaishwarPanchu" target="_blank" rel="noopener">
+          💛 Donate via PayPal
+        </a>
+        <p class="donate-note">Opens PayPal in your browser. Totally optional — thank you either way, it truly means a lot! 🙏</p>
+      </div>
+
+    </div><!-- /settings-body -->
+
+    <div id="sheet-actions">
       <button id="cancel-btn">Cancel</button>
       <button id="apply-btn">Apply &amp; Reset</button>
     </div>
@@ -326,252 +541,819 @@
 </div>
 
 <script>
-  // ── Click Sound (synthesized — no external files needed) ─
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// ════════════════════════════════════════════
+//  THEMES
+// ════════════════════════════════════════════
+const THEMES = [
+  {
+    id: 'classic',
+    name: 'Classic',
+    p1: { bg: '#f5f0e8', text: '#1a1a1a', low: '#ffd5d5' },
+    p2: { bg: '#1a1a1a', text: '#f5f0e8', low: '#4a1a1a' },
+    bar: '#1a1a1a',
+    flagBg: '#e74c3c',
+  },
+  {
+    id: 'forest',
+    name: 'Forest',
+    p1: { bg: '#e8f0e0', text: '#1e3a1e', low: '#ffd5d5' },
+    p2: { bg: '#1e3a1e', text: '#e8f0e0', low: '#3a1a1a' },
+    bar: '#1e3a1e',
+    flagBg: '#c0392b',
+  },
+  {
+    id: 'ocean',
+    name: 'Ocean',
+    p1: { bg: '#e0ecf5', text: '#0d2b45', low: '#ffd5d5' },
+    p2: { bg: '#0d2b45', text: '#e0ecf5', low: '#2b0d0d' },
+    bar: '#0d2b45',
+    flagBg: '#c0392b',
+  },
+  {
+    id: 'midnight',
+    name: 'Midnight',
+    p1: { bg: '#e8e0f5', text: '#1a0d3a', low: '#ffd5d5' },
+    p2: { bg: '#1a0d3a', text: '#e8e0f5', low: '#3a0d1a' },
+    bar: '#1a0d3a',
+    flagBg: '#8e44ad',
+  },
+  {
+    id: 'sand',
+    name: 'Sand & Slate',
+    p1: { bg: '#f5e6cc', text: '#3a2a10', low: '#ffd5d5' },
+    p2: { bg: '#3a3a4a', text: '#f5e6cc', low: '#4a1a1a' },
+    bar: '#3a3a4a',
+    flagBg: '#c0392b',
+  },
+  {
+    id: 'rose',
+    name: 'Rose & Noir',
+    p1: { bg: '#fce8ec', text: '#3a0d18', low: '#ffd5d5' },
+    p2: { bg: '#2a0a14', text: '#fce8ec', low: '#4a0a14' },
+    bar: '#2a0a14',
+    flagBg: '#e74c3c',
+  },
+  {
+    id: 'slate',
+    name: 'Slate',
+    p1: { bg: '#dde4ec', text: '#1c2a38', low: '#ffd5d5' },
+    p2: { bg: '#1c2a38', text: '#dde4ec', low: '#381c1c' },
+    bar: '#1c2a38',
+    flagBg: '#2980b9',
+  },
+  {
+    id: 'amber',
+    name: 'Amber',
+    p1: { bg: '#fdf3dc', text: '#3a2000', low: '#ffd5d5' },
+    p2: { bg: '#3a2000', text: '#fdf3dc', low: '#3a0000' },
+    bar: '#3a2000',
+    flagBg: '#e67e22',
+  },
+];
 
-  function playClick() {
-    try {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const bufferSize = Math.floor(audioCtx.sampleRate * 0.04); // 40ms
-      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 8);
-      }
-      const source = audioCtx.createBufferSource();
-      source.buffer = buffer;
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'highpass';
-      filter.frequency.value = 1800;
-      const gain = audioCtx.createGain();
-      gain.gain.setValueAtTime(1.2, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
-      source.connect(filter);
-      filter.connect(gain);
-      gain.connect(audioCtx.destination);
-      source.start();
-    } catch(e) {}
-  }
+// ════════════════════════════════════════════
+//  SOUNDS
+// ════════════════════════════════════════════
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  // ── State ──────────────────────────────────────────────
-  let totalMs   = 10 * 60 * 1000;
-  let increment = 0; // seconds
-  let whiteMs   = totalMs;
-  let blackMs   = totalMs;
-  let active    = null;   // 'white' | 'black' | null
-  let paused    = false;
-  let gameOver  = false;
-  let lastTick  = null;
-  let rafId     = null;
+function ensureAudio() {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
 
-  const LOW_TIME = 30 * 1000; // 30 seconds
-
-  // ── DOM refs ────────────────────────────────────────────
-  const whitePanel  = document.getElementById('white');
-  const blackPanel  = document.getElementById('black');
-  const whiteDisplay = document.getElementById('white-time');
-  const blackDisplay = document.getElementById('black-time');
-  const pauseBtn    = document.getElementById('pause-btn');
-  const resetBtn    = document.getElementById('reset-btn');
-  const settingsBtn = document.getElementById('settings-btn');
-  const overlay     = document.getElementById('settings-overlay');
-  const applyBtn    = document.getElementById('apply-btn');
-  const cancelBtn   = document.getElementById('cancel-btn');
-  const customMin   = document.getElementById('custom-min');
-  const customInc   = document.getElementById('custom-inc');
-  const presetBtns  = document.querySelectorAll('.preset-btn');
-
-  // ── Helpers ─────────────────────────────────────────────
-  function fmt(ms) {
-    const totalSec = Math.ceil(ms / 1000);
-    const m = Math.floor(totalSec / 60);
-    const s = totalSec % 60;
-    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  }
-
-  function render() {
-    whiteDisplay.textContent = fmt(whiteMs);
-    blackDisplay.textContent = fmt(blackMs);
-
-    // Reset classes
-    ['active','inactive','flagged','low'].forEach(c => {
-      whitePanel.classList.remove(c);
-      blackPanel.classList.remove(c);
-    });
-
-    if (gameOver) {
-      if (whiteMs <= 0) whitePanel.classList.add('flagged');
-      if (blackMs <= 0) blackPanel.classList.add('flagged');
-      return;
+const SOUNDS = [
+  {
+    id: 'click',
+    name: 'Click',
+    icon: '🖱️',
+    desc: 'Sharp plastic click',
+    play() {
+      ensureAudio();
+      const len = Math.floor(audioCtx.sampleRate * 0.04);
+      const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/len, 8);
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const f = audioCtx.createBiquadFilter(); f.type='highpass'; f.frequency.value=1800;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(1.2, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.04);
+      src.connect(f); f.connect(g); g.connect(audioCtx.destination); src.start();
     }
+  },
+  {
+    id: 'tap',
+    name: 'Tap',
+    icon: '👆',
+    desc: 'Soft finger tap',
+    play() {
+      ensureAudio();
+      const len = Math.floor(audioCtx.sampleRate * 0.06);
+      const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/len, 4) * 0.6;
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const f = audioCtx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=900;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(1.0, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.06);
+      src.connect(f); f.connect(g); g.connect(audioCtx.destination); src.start();
+    }
+  },
+  {
+    id: 'wood',
+    name: 'Wood',
+    icon: '🪵',
+    desc: 'Wooden piece thud',
+    play() {
+      ensureAudio();
+      const t = audioCtx.currentTime;
+      // Tonal thud: oscillator + noise
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine'; osc.frequency.setValueAtTime(180, t);
+      osc.frequency.exponentialRampToValueAtTime(60, t+0.08);
+      const og = audioCtx.createGain();
+      og.gain.setValueAtTime(0.5, t);
+      og.gain.exponentialRampToValueAtTime(0.001, t+0.12);
+      osc.connect(og); og.connect(audioCtx.destination);
+      osc.start(t); osc.stop(t+0.15);
 
-    if (active === 'white') {
-      whitePanel.classList.add('active');
-      blackPanel.classList.add('inactive');
-      if (whiteMs < LOW_TIME) whitePanel.classList.add('low');
-    } else if (active === 'black') {
-      blackPanel.classList.add('active');
-      whitePanel.classList.add('inactive');
-      if (blackMs < LOW_TIME) blackPanel.classList.add('low');
+      const len = Math.floor(audioCtx.sampleRate * 0.05);
+      const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/len, 6) * 0.35;
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const f = audioCtx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=400; f.Q.value=1;
+      const ng = audioCtx.createGain();
+      ng.gain.setValueAtTime(1, t);
+      ng.gain.exponentialRampToValueAtTime(0.001, t+0.05);
+      src.connect(f); f.connect(ng); ng.connect(audioCtx.destination); src.start(t);
+    }
+  },
+  {
+    id: 'bell',
+    name: 'Bell',
+    icon: '🔔',
+    desc: 'Soft chime',
+    play() {
+      ensureAudio();
+      const t = audioCtx.currentTime;
+      [523.25, 659.25].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(0, t + i*0.02);
+        g.gain.linearRampToValueAtTime(0.25, t + i*0.02 + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, t + i*0.02 + 0.5);
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.start(t + i*0.02); osc.stop(t + i*0.02 + 0.55);
+      });
+    }
+  },
+  {
+    id: 'none',
+    name: 'Silent',
+    icon: '🔇',
+    desc: 'No sound',
+    play() {}
+  },
+  {
+    id: 'fun',
+    name: 'Fun Mode 🎉',
+    icon: '🎭',
+    desc: '150 phrases — snarky, dramatic, silly & more',
+    play() { playFunPhrase(); }
+  },
+];
+
+// ════════════════════════════════════════════
+//  FUN MODE — 150 PHRASES
+// ════════════════════════════════════════════
+const FUN_PHRASES = [
+  // 😏 Snarky (20)
+  { text: "Take that!", cat: "snarky" },
+  { text: "Too slow!", cat: "snarky" },
+  { text: "Oh, really? That was your move?", cat: "snarky" },
+  { text: "My grandma plays faster.", cat: "snarky" },
+  { text: "Tick tock, genius.", cat: "snarky" },
+  { text: "Bold strategy. Bold.", cat: "snarky" },
+  { text: "Sure about that?", cat: "snarky" },
+  { text: "Interesting choice.", cat: "snarky" },
+  { text: "Clock's running, not walking.", cat: "snarky" },
+  { text: "Was that on purpose?", cat: "snarky" },
+  { text: "You had one job.", cat: "snarky" },
+  { text: "I've seen better moves in checkers.", cat: "snarky" },
+  { text: "That's one way to do it, I suppose.", cat: "snarky" },
+  { text: "Your clock, your problem.", cat: "snarky" },
+  { text: "Did you mean to do that?", cat: "snarky" },
+  { text: "Ooh, brave.", cat: "snarky" },
+  { text: "Your move... was that.", cat: "snarky" },
+  { text: "Wow. Just wow.", cat: "snarky" },
+  { text: "Are you sure you play chess?", cat: "snarky" },
+  { text: "Time flies when you're losing.", cat: "snarky" },
+
+  // 🎭 Dramatic (20)
+  { text: "The clock ticks toward destiny!", cat: "dramatic" },
+  { text: "Every second could be your last!", cat: "dramatic" },
+  { text: "The fate of the board hangs in the balance!", cat: "dramatic" },
+  { text: "A move has been made. History trembles.", cat: "dramatic" },
+  { text: "In this moment, legends are born!", cat: "dramatic" },
+  { text: "The clock does not forgive!", cat: "dramatic" },
+  { text: "Time is the true enemy!", cat: "dramatic" },
+  { text: "Feel the weight of each passing second!", cat: "dramatic" },
+  { text: "The pieces cry out for justice!", cat: "dramatic" },
+  { text: "One move closer to glory... or ruin!", cat: "dramatic" },
+  { text: "The board witnesses your courage!", cat: "dramatic" },
+  { text: "This is the moment everything changes!", cat: "dramatic" },
+  { text: "The clock is merciless!", cat: "dramatic" },
+  { text: "Your move echoes through eternity!", cat: "dramatic" },
+  { text: "Behold! A piece has moved!", cat: "dramatic" },
+  { text: "The storm approaches!", cat: "dramatic" },
+  { text: "Can they hold on? The clock says no!", cat: "dramatic" },
+  { text: "In chess, as in life, time waits for no one!", cat: "dramatic" },
+  { text: "The tension is unbearable!", cat: "dramatic" },
+  { text: "History will remember this game!", cat: "dramatic" },
+
+  // 🤪 Silly (20)
+  { text: "Boing!", cat: "silly" },
+  { text: "Weeee!", cat: "silly" },
+  { text: "Did someone order a chess move?", cat: "silly" },
+  { text: "Beep boop, your turn!", cat: "silly" },
+  { text: "Whoopsie daisy!", cat: "silly" },
+  { text: "Zoom zoom!", cat: "silly" },
+  { text: "Plot twist!", cat: "silly" },
+  { text: "Dun dun duuun!", cat: "silly" },
+  { text: "Chess time, woohoo!", cat: "silly" },
+  { text: "Banana move activated!", cat: "silly" },
+  { text: "Wiggle your fingers for good luck!", cat: "silly" },
+  { text: "A wild move appears!", cat: "silly" },
+  { text: "Oops... or was it?", cat: "silly" },
+  { text: "Did the piece just wink at you?", cat: "silly" },
+  { text: "Squirrel!", cat: "silly" },
+  { text: "Your move made the bishop sneeze.", cat: "silly" },
+  { text: "The rook approves... or does it?", cat: "silly" },
+  { text: "Bleep bloop!", cat: "silly" },
+  { text: "I believe in you! Sort of!", cat: "silly" },
+  { text: "Ping!", cat: "silly" },
+
+  // 🎙️ Sports Commentator (20)
+  { text: "And the clock is ticking, folks!", cat: "commentator" },
+  { text: "What a move by the player in... whatever colour they are!", cat: "commentator" },
+  { text: "The crowd goes mild!", cat: "commentator" },
+  { text: "They're playing chess, and they're playing it hard!", cat: "commentator" },
+  { text: "Textbook. Absolutely textbook.", cat: "commentator" },
+  { text: "Down to the wire here!", cat: "commentator" },
+  { text: "I've never seen anything like it. Mostly because I'm an app.", cat: "commentator" },
+  { text: "A controversial decision from the player!", cat: "commentator" },
+  { text: "The clock is their greatest opponent now!", cat: "commentator" },
+  { text: "Could this be the turning point?!", cat: "commentator" },
+  { text: "Incredible scenes here at the kitchen table.", cat: "commentator" },
+  { text: "They came to play!", cat: "commentator" },
+  { text: "A solid move. A very solid move.", cat: "commentator" },
+  { text: "And the crowd... are at home, presumably.", cat: "commentator" },
+  { text: "That's one for the highlight reel!", cat: "commentator" },
+  { text: "They don't teach that in chess school!", cat: "commentator" },
+  { text: "Time management is critical here!", cat: "commentator" },
+  { text: "A bold gamble. Will it pay off?", cat: "commentator" },
+  { text: "Both players look focused. One of them is lying.", cat: "commentator" },
+  { text: "The momentum has shifted!", cat: "commentator" },
+
+  // 🧘 Philosophical (20)
+  { text: "Every move is a choice. Choose wisely.", cat: "philosophical" },
+  { text: "Time given cannot be reclaimed.", cat: "philosophical" },
+  { text: "The board is a mirror of the mind.", cat: "philosophical" },
+  { text: "In stillness, find your next move.", cat: "philosophical" },
+  { text: "What is a king without his time?", cat: "philosophical" },
+  { text: "Even pawns dream of promotion.", cat: "philosophical" },
+  { text: "The strongest move is the one not yet played.", cat: "philosophical" },
+  { text: "Patience is a strategy.", cat: "philosophical" },
+  { text: "The clock teaches us what life already knows.", cat: "philosophical" },
+  { text: "Each piece carries the weight of possibility.", cat: "philosophical" },
+  { text: "To sacrifice is sometimes to win.", cat: "philosophical" },
+  { text: "The game ends. The learning does not.", cat: "philosophical" },
+  { text: "A plan imperfectly executed beats no plan perfectly abandoned.", cat: "philosophical" },
+  { text: "The rook sees far. Do you?", cat: "philosophical" },
+  { text: "Time is the only opponent that never blunders.", cat: "philosophical" },
+  { text: "In chess and life, think ahead.", cat: "philosophical" },
+  { text: "What does your opponent fear?", cat: "philosophical" },
+  { text: "The queen moves freely. So should your thinking.", cat: "philosophical" },
+  { text: "Pressure reveals character.", cat: "philosophical" },
+  { text: "The best move is often the quietest.", cat: "philosophical" },
+
+  // 🗣️ Trash Talk (20)
+  { text: "Is that the best you've got?", cat: "trash" },
+  { text: "My pieces are shaking. From laughter.", cat: "trash" },
+  { text: "You call that an attack?", cat: "trash" },
+  { text: "I've seen better chess from a pigeon.", cat: "trash" },
+  { text: "Resign now, save yourself the embarrassment.", cat: "trash" },
+  { text: "Oh no. Oh no no no.", cat: "trash" },
+  { text: "You're making this too easy.", cat: "trash" },
+  { text: "Did you learn chess yesterday? It shows.", cat: "trash" },
+  { text: "Your opening theory called. It wants a refund.", cat: "trash" },
+  { text: "That move was... creative. Wrongly creative.", cat: "trash" },
+  { text: "The clock is coming for you.", cat: "trash" },
+  { text: "You're playing into my hands.", cat: "trash" },
+  { text: "I almost felt sorry for you. Almost.", cat: "trash" },
+  { text: "GG already. Trust me.", cat: "trash" },
+  { text: "Even the pawns feel sorry for you.", cat: "trash" },
+  { text: "That's not a blunder, that's a catastrophe.", cat: "trash" },
+  { text: "Are you okay? You don't look okay.", cat: "trash" },
+  { text: "Rookie. Move.", cat: "trash" },
+  { text: "I've seen more threat from a rubber duck.", cat: "trash" },
+  { text: "Your king is sweating.", cat: "trash" },
+
+  // 💪 Encouraging (15)
+  { text: "You've got this!", cat: "encouraging" },
+  { text: "Trust your instincts!", cat: "encouraging" },
+  { text: "Great move!", cat: "encouraging" },
+  { text: "Keep the pressure on!", cat: "encouraging" },
+  { text: "You're doing brilliantly!", cat: "encouraging" },
+  { text: "Stay focused, you're in control!", cat: "encouraging" },
+  { text: "That's the spirit!", cat: "encouraging" },
+  { text: "Excellent thinking!", cat: "encouraging" },
+  { text: "Don't give up — you're closer than you think!", cat: "encouraging" },
+  { text: "Every move brings you closer to victory!", cat: "encouraging" },
+  { text: "Believe in your game!", cat: "encouraging" },
+  { text: "You're playing really well!", cat: "encouraging" },
+  { text: "Keep calm and chess on!", cat: "encouraging" },
+  { text: "That's a power move right there!", cat: "encouraging" },
+  { text: "Magnificent!", cat: "encouraging" },
+
+  // 🎬 Movie Style (15)
+  { text: "I'll be back... to take your queen.", cat: "movie" },
+  { text: "May the best player win. Spoiler: it's me.", cat: "movie" },
+  { text: "You can't handle the truth — you're losing.", cat: "movie" },
+  { text: "To infinity... and checkmate!", cat: "movie" },
+  { text: "Why so serious? It's just chess.", cat: "movie" },
+  { text: "Elementary, my dear opponent.", cat: "movie" },
+  { text: "Just when you thought it was safe to castle...", cat: "movie" },
+  { text: "Game over, man. Game over!", cat: "movie" },
+  { text: "With great power comes great responsibility to not blunder.", cat: "movie" },
+  { text: "You're gonna need a bigger strategy.", cat: "movie" },
+  { text: "I feel the need... the need for speed!", cat: "movie" },
+  { text: "Nobody puts the king in the corner.", cat: "movie" },
+  { text: "This is Sparta... chess!", cat: "movie" },
+  { text: "Winter is coming for your king.", cat: "movie" },
+  { text: "One does not simply walk into checkmate.", cat: "movie" },
+];
+
+// Fun mode engine
+let funOrder = 'random';
+let funIndex = 0;
+let funQueue = [];
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildFunQueue() {
+  funQueue = shuffleArray(FUN_PHRASES);
+  funIndex = 0;
+}
+buildFunQueue();
+
+function playFunPhrase() {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+
+  let phrase;
+  if (funOrder === 'random') {
+    // Fisher-Yates queue — no repeats until all played
+    if (funIndex >= funQueue.length) buildFunQueue();
+    phrase = funQueue[funIndex++];
+  } else {
+    phrase = FUN_PHRASES[funIndex % FUN_PHRASES.length];
+    funIndex++;
+  }
+
+  const utt = new SpeechSynthesisUtterance(phrase.text);
+  utt.rate  = 1.05;
+  utt.pitch = 1.0;
+  utt.volume = 1.0;
+
+  // Pick a voice personality based on category
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    // Try to find an English voice; vary by category for flavour
+    const engVoices = voices.filter(v => v.lang.startsWith('en'));
+    if (engVoices.length > 0) {
+      // Use different voices for different categories if available
+      const idx = ['snarky','dramatic','silly','commentator','philosophical','trash','encouraging','movie']
+                    .indexOf(phrase.cat);
+      utt.voice = engVoices[idx % engVoices.length];
     }
   }
+  window.speechSynthesis.speak(utt);
+}
 
-  // ── Tick ────────────────────────────────────────────────
-  function tick(timestamp) {
-    if (paused || !active || gameOver) { lastTick = null; return; }
+// Voices load asynchronously on some browsers
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
 
-    if (lastTick === null) { lastTick = timestamp; }
-    const delta = timestamp - lastTick;
-    lastTick = timestamp;
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+let totalMs    = 10 * 60 * 1000;
+let increment  = 0;
+let whiteMs    = totalMs;
+let blackMs    = totalMs;
+let active     = null;
+let paused     = false;
+let gameOver   = false;
+let lastTick   = null;
+let rafId      = null;
 
-    if (active === 'white') {
-      whiteMs = Math.max(0, whiteMs - delta);
-      if (whiteMs === 0) { gameOver = true; render(); return; }
-    } else {
-      blackMs = Math.max(0, blackMs - delta);
-      if (blackMs === 0) { gameOver = true; render(); return; }
-    }
+let currentThemeId = 'classic';
+let currentSoundId = 'click';
+let currentFunOrder = 'random';
+const LOW_TIME = 30 * 1000;
 
-    render();
-    rafId = requestAnimationFrame(tick);
+// ════════════════════════════════════════════
+//  DOM
+// ════════════════════════════════════════════
+const whitePanel   = document.getElementById('white');
+const blackPanel   = document.getElementById('black');
+const whiteDisplay = document.getElementById('white-time');
+const blackDisplay = document.getElementById('black-time');
+const pauseBtn     = document.getElementById('pause-btn');
+const resetBtn     = document.getElementById('reset-btn');
+const settingsBtn  = document.getElementById('settings-btn');
+const overlay      = document.getElementById('settings-overlay');
+const applyBtn     = document.getElementById('apply-btn');
+const cancelBtn    = document.getElementById('cancel-btn');
+const customMin    = document.getElementById('custom-min');
+const customInc    = document.getElementById('custom-inc');
+const presetBtns   = document.querySelectorAll('.preset-btn');
+const controls     = document.getElementById('controls');
+
+// ════════════════════════════════════════════
+//  THEME APPLICATION
+// ════════════════════════════════════════════
+function applyTheme(id) {
+  const theme = THEMES.find(t => t.id === id) || THEMES[0];
+  currentThemeId = theme.id;
+
+  whitePanel.style.background  = theme.p1.bg;
+  whitePanel.style.color       = theme.p1.text;
+  blackPanel.style.background  = theme.p2.bg;
+  blackPanel.style.color       = theme.p2.text;
+  controls.style.background    = theme.bar;
+
+  // Inject CSS variables for low-time pulse
+  document.documentElement.style.setProperty('--p1-bg',  theme.p1.bg);
+  document.documentElement.style.setProperty('--p1-low', theme.p1.low);
+  document.documentElement.style.setProperty('--p2-bg',  theme.p2.bg);
+  document.documentElement.style.setProperty('--p2-low', theme.p2.low);
+
+  // Store flagBg for use in render
+  whitePanel.dataset.flagBg = theme.flagBg;
+  blackPanel.dataset.flagBg = theme.flagBg;
+  whitePanel.dataset.normalBg = theme.p1.bg;
+  blackPanel.dataset.normalBg = theme.p2.bg;
+}
+
+// ════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════
+function fmt(ms) {
+  const s = Math.ceil(ms / 1000);
+  return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+
+function render() {
+  whiteDisplay.textContent = fmt(whiteMs);
+  blackDisplay.textContent = fmt(blackMs);
+
+  const theme = THEMES.find(t => t.id === currentThemeId) || THEMES[0];
+
+  // Clear all state classes
+  [whitePanel, blackPanel].forEach(p => {
+    p.classList.remove('inactive','flagged-panel','low-time');
+    p.style.background = p.dataset.normalBg || (p.id==='white' ? theme.p1.bg : theme.p2.bg);
+  });
+
+  if (gameOver) {
+    if (whiteMs <= 0) { whitePanel.classList.add('flagged-panel'); whitePanel.style.background = theme.flagBg; }
+    if (blackMs <= 0) { blackPanel.classList.add('flagged-panel'); blackPanel.style.background = theme.flagBg; }
+    return;
   }
 
-  function startTick() {
-    if (rafId) cancelAnimationFrame(rafId);
-    lastTick = null;
-    rafId = requestAnimationFrame(tick);
+  if (active === 'white') {
+    blackPanel.classList.add('inactive');
+    if (whiteMs < LOW_TIME) whitePanel.classList.add('low-time');
+  } else if (active === 'black') {
+    whitePanel.classList.add('inactive');
+    if (blackMs < LOW_TIME) blackPanel.classList.add('low-time');
   }
+}
 
-  // ── Panel tap ───────────────────────────────────────────
-  function handleTap(player) {
-    if (gameOver) return;
+// ════════════════════════════════════════════
+//  TICK
+// ════════════════════════════════════════════
+function tick(ts) {
+  if (paused || !active || gameOver) { lastTick = null; return; }
+  if (lastTick === null) lastTick = ts;
+  const delta = ts - lastTick; lastTick = ts;
 
-    // First tap: start the opponent's clock
-    // (touching white means white just moved → start black's clock)
-    const opponent = player === 'white' ? 'black' : 'white';
-
-    if (active === null) {
-      // Game hasn't started yet — first tap starts the game
-      // Whoever taps first means THEY moved, so opponent's clock runs
-      playClick();
-      active = opponent;
-      paused = false;
-      startTick();
-      render();
-      return;
-    }
-
-    if (paused) return; // must unpause via button
-
-    // Only the active player's panel should respond
-    if (active !== player) return;
-
-    playClick();
-
-    // Apply increment to the player who just moved
-    if (increment > 0) {
-      if (player === 'white') whiteMs += increment * 1000;
-      else blackMs += increment * 1000;
-    }
-
-    active = opponent;
-    lastTick = null;
-    render();
+  if (active === 'white') {
+    whiteMs = Math.max(0, whiteMs - delta);
+    if (whiteMs === 0) { gameOver = true; render(); return; }
+  } else {
+    blackMs = Math.max(0, blackMs - delta);
+    if (blackMs === 0) { gameOver = true; render(); return; }
   }
-
-  whitePanel.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    handleTap('white');
-  });
-
-  blackPanel.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    handleTap('black');
-  });
-
-  // ── Pause / Resume ──────────────────────────────────────
-  pauseBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (gameOver || active === null) return;
-    paused = !paused;
-    pauseBtn.textContent = paused ? 'Resume' : 'Pause';
-    if (!paused) startTick();
-    render();
-  });
-
-  // ── Reset ───────────────────────────────────────────────
-  function resetGame() {
-    cancelAnimationFrame(rafId);
-    whiteMs  = totalMs;
-    blackMs  = totalMs;
-    active   = null;
-    paused   = false;
-    gameOver = false;
-    lastTick = null;
-    pauseBtn.textContent = 'Pause';
-    render();
-  }
-
-  resetBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    resetGame();
-  });
-
-  // ── Settings ────────────────────────────────────────────
-  settingsBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (active !== null && !paused && !gameOver) {
-      paused = true;
-      pauseBtn.textContent = 'Resume';
-    }
-    overlay.classList.add('open');
-  });
-
-  cancelBtn.addEventListener('click', () => overlay.classList.remove('open'));
-
-  applyBtn.addEventListener('click', () => {
-    const mins = Math.max(1, parseInt(customMin.value) || 10);
-    const inc  = Math.max(0, parseInt(customInc.value) || 0);
-    totalMs    = mins * 60 * 1000;
-    increment  = inc;
-    overlay.classList.remove('open');
-    resetGame();
-  });
-
-  presetBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      presetBtns.forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      customMin.value = btn.dataset.min;
-      customInc.value = btn.dataset.inc;
-    });
-  });
-
-  // Sync custom inputs back to deselect presets
-  [customMin, customInc].forEach(inp => {
-    inp.addEventListener('input', () => {
-      presetBtns.forEach(b => b.classList.remove('selected'));
-    });
-  });
-
-  // ── Service Worker (offline support) ─────────────────────
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  }
-
-  // ── Init ─────────────────────────────────────────────────
   render();
+  rafId = requestAnimationFrame(tick);
+}
 
-  // Keep screen awake if supported
-  if ('wakeLock' in navigator) {
-    async function requestWakeLock() {
-      try { await navigator.wakeLock.request('screen'); } catch(_) {}
-    }
-    requestWakeLock();
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') requestWakeLock();
-    });
+function startTick() {
+  if (rafId) cancelAnimationFrame(rafId);
+  lastTick = null;
+  rafId = requestAnimationFrame(tick);
+}
+
+// ════════════════════════════════════════════
+//  SOUND
+// ════════════════════════════════════════════
+function playClick() {
+  const s = SOUNDS.find(s => s.id === currentSoundId);
+  if (s) s.play();
+}
+
+// ════════════════════════════════════════════
+//  PANEL TAP
+// ════════════════════════════════════════════
+function handleTap(player) {
+  if (gameOver) return;
+  const opponent = player === 'white' ? 'black' : 'white';
+
+  if (active === null) {
+    playClick();
+    active = opponent; paused = false;
+    startTick(); render(); return;
   }
+  if (paused) return;
+  if (active !== player) return;
+
+  playClick();
+  if (increment > 0) {
+    if (player === 'white') whiteMs += increment * 1000;
+    else blackMs += increment * 1000;
+  }
+  active = opponent;
+  lastTick = null;
+  render();
+}
+
+whitePanel.addEventListener('pointerdown', e => { e.preventDefault(); handleTap('white'); });
+blackPanel.addEventListener('pointerdown', e => { e.preventDefault(); handleTap('black'); });
+
+// ════════════════════════════════════════════
+//  CONTROLS
+// ════════════════════════════════════════════
+pauseBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (gameOver || active === null) return;
+  paused = !paused;
+  pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+  if (!paused) startTick();
+  render();
+});
+
+function resetGame() {
+  cancelAnimationFrame(rafId);
+  whiteMs = totalMs; blackMs = totalMs;
+  active = null; paused = false; gameOver = false; lastTick = null;
+  pauseBtn.textContent = 'Pause';
+  render();
+}
+
+resetBtn.addEventListener('click', e => { e.stopPropagation(); resetGame(); });
+
+// ════════════════════════════════════════════
+//  SETTINGS SHEET
+// ════════════════════════════════════════════
+settingsBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (active !== null && !paused && !gameOver) { paused = true; pauseBtn.textContent = 'Resume'; }
+  overlay.classList.add('open');
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// Time presets
+presetBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    presetBtns.forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    customMin.value = btn.dataset.min;
+    customInc.value = btn.dataset.inc;
+  });
+});
+[customMin, customInc].forEach(inp => {
+  inp.addEventListener('input', () => presetBtns.forEach(b => b.classList.remove('selected')));
+});
+
+// Build theme cards
+const themeGrid = document.getElementById('theme-grid');
+THEMES.forEach(theme => {
+  const card = document.createElement('div');
+  card.className = 'theme-card' + (theme.id === currentThemeId ? ' selected' : '');
+  card.dataset.themeId = theme.id;
+  card.innerHTML = `
+    <div class="theme-preview">
+      <div class="half" style="background:${theme.p1.bg};color:${theme.p1.text}">10:00</div>
+      <div class="half" style="background:${theme.p2.bg};color:${theme.p2.text}">10:00</div>
+    </div>
+    <div class="theme-name" style="background:${theme.bar};color:#f5f0e8;">${theme.name}</div>
+  `;
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+  });
+  themeGrid.appendChild(card);
+});
+
+// Build sound rows
+const soundList = document.getElementById('sound-list');
+const funOptionsPanel = document.getElementById('fun-options');
+const orderOpts = document.querySelectorAll('.order-opt');
+
+orderOpts.forEach(opt => {
+  opt.addEventListener('click', () => {
+    orderOpts.forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    currentFunOrder = opt.dataset.order;
+    funOrder = currentFunOrder;
+    if (currentFunOrder === 'sequential') { funIndex = 0; }
+    else buildFunQueue();
+  });
+});
+
+// Voice preview
+const voicePreviewBtn = document.getElementById('voice-preview-btn');
+const voiceInfo       = document.getElementById('voice-info');
+
+const PREVIEW_PHRASES = [
+  "Take that! Your move, genius!",
+  "The clock does not forgive!",
+  "One does not simply walk into checkmate.",
+  "Tick tock, genius.",
+  "Incredible scenes here at the kitchen table.",
+];
+
+let previewPhraseIdx = 0;
+
+function getVoiceDescription(voice) {
+  if (!voice) return 'Default system voice';
+  const lang = voice.lang || '';
+  const name = voice.name || '';
+  let region = '';
+  if (lang.includes('AU')) region = 'Australian English';
+  else if (lang.includes('GB')) region = 'British English';
+  else if (lang.includes('IN')) region = 'Indian English';
+  else if (lang.includes('en')) region = 'English';
+  else region = lang;
+  return `${name}${region ? ' · ' + region : ''}`;
+}
+
+voicePreviewBtn.addEventListener('click', () => {
+  if (!('speechSynthesis' in window)) {
+    voiceInfo.textContent = "Sorry, your browser doesn't support speech synthesis.";
+    return;
+  }
+  window.speechSynthesis.cancel();
+
+  const phrase = PREVIEW_PHRASES[previewPhraseIdx % PREVIEW_PHRASES.length];
+  previewPhraseIdx++;
+
+  const utt = new SpeechSynthesisUtterance(phrase);
+  utt.rate = 1.05; utt.pitch = 1.0; utt.volume = 1.0;
+
+  const voices = window.speechSynthesis.getVoices();
+  const engVoices = voices.filter(v => v.lang && v.lang.startsWith('en'));
+  const chosenVoice = engVoices.length > 0 ? engVoices[0] : (voices[0] || null);
+  if (chosenVoice) utt.voice = chosenVoice;
+
+  voicePreviewBtn.classList.add('speaking');
+  voicePreviewBtn.textContent = '🔊 Speaking...';
+
+  utt.onend = () => {
+    voicePreviewBtn.classList.remove('speaking');
+    voicePreviewBtn.textContent = '🔊 Preview again';
+    const desc = getVoiceDescription(chosenVoice);
+    const count = engVoices.length;
+    voiceInfo.textContent = `Voice: ${desc}${count > 1 ? ` · ${count} English voices available` : ''}`;
+  };
+  utt.onerror = () => {
+    voicePreviewBtn.classList.remove('speaking');
+    voicePreviewBtn.textContent = '🔊 Preview your device\'s voice';
+    voiceInfo.textContent = 'Could not play — check your device volume.';
+  };
+
+  window.speechSynthesis.speak(utt);
+});
+
+SOUNDS.forEach(sound => {
+  const row = document.createElement('div');
+  row.className = 'sound-row' + (sound.id === currentSoundId ? ' selected' : '');
+  row.dataset.soundId = sound.id;
+  row.innerHTML = `
+    <span class="sound-icon">${sound.icon}</span>
+    <div>
+      <div class="sound-name">${sound.name}</div>
+      <div class="sound-desc">${sound.desc}</div>
+    </div>
+    <button class="sound-try">Try</button>
+  `;
+  row.querySelector('.sound-try').addEventListener('click', e => {
+    e.stopPropagation();
+    sound.play();
+  });
+  row.addEventListener('click', () => {
+    document.querySelectorAll('.sound-row').forEach(r => r.classList.remove('selected'));
+    row.classList.add('selected');
+    // Show/hide fun options
+    if (sound.id === 'fun') {
+      funOptionsPanel.classList.add('visible');
+    } else {
+      funOptionsPanel.classList.remove('visible');
+    }
+  });
+  soundList.appendChild(row);
+});
+
+// Show fun panel if fun is already selected on load
+if (currentSoundId === 'fun') funOptionsPanel.classList.add('visible');
+
+cancelBtn.addEventListener('click', () => overlay.classList.remove('open'));
+
+applyBtn.addEventListener('click', () => {
+  // Apply time
+  const mins = Math.max(1, parseInt(customMin.value) || 10);
+  const inc  = Math.max(0, parseInt(customInc.value) || 0);
+  totalMs = mins * 60 * 1000;
+  increment = inc;
+
+  // Apply theme
+  const selectedTheme = document.querySelector('.theme-card.selected');
+  if (selectedTheme) applyTheme(selectedTheme.dataset.themeId);
+
+  // Apply sound
+  const selectedSound = document.querySelector('.sound-row.selected');
+  if (selectedSound) {
+    currentSoundId = selectedSound.dataset.soundId;
+    if (currentSoundId === 'fun') {
+      funOrder = currentFunOrder;
+      if (funOrder === 'sequential') funIndex = 0;
+      else buildFunQueue();
+    }
+  }
+
+  overlay.classList.remove('open');
+  resetGame();
+});
+
+// Tap outside sheet to close
+overlay.addEventListener('pointerdown', e => {
+  if (e.target === overlay) overlay.classList.remove('open');
+});
+
+// ════════════════════════════════════════════
+//  SERVICE WORKER
+// ════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ════════════════════════════════════════════
+//  WAKE LOCK
+// ════════════════════════════════════════════
+if ('wakeLock' in navigator) {
+  const req = async () => { try { await navigator.wakeLock.request('screen'); } catch(_){} };
+  req();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible') req(); });
+}
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+applyTheme('classic');
+render();
 </script>
 </body>
 </html>
