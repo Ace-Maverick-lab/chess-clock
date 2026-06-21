@@ -377,6 +377,125 @@
       line-height: 1.5; min-height: 30px;
     }
 
+    /* Extra Fun sub-panel */
+    #extrafun-options {
+      display: none;
+      margin-top: 12px;
+      background: #e2ddd5;
+      border-radius: 10px;
+      padding: 14px;
+    }
+    #extrafun-options.visible { display: block; }
+
+    .extrafun-intro {
+      font-size: 12px; color: rgba(0,0,0,0.5);
+      line-height: 1.5; margin-bottom: 12px;
+    }
+    .extrafun-intro a {
+      color: #1a1a1a; font-weight: 600; text-decoration: underline;
+    }
+
+    .ef-order-row {
+      display: flex;
+      background: rgba(0,0,0,0.08);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .ef-order-opt {
+      flex: 1; padding: 8px 6px;
+      font-size: 12px; font-weight: 600;
+      text-align: center; cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+      color: rgba(0,0,0,0.5);
+    }
+    .ef-order-opt.selected { background: #1a1a1a; color: #f5f0e8; }
+
+    .ef-section-label {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(0,0,0,0.4); margin-bottom: 8px;
+    }
+
+    .ef-clip-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .ef-clip-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 8px;
+      padding: 9px 10px;
+    }
+    .ef-clip-status {
+      font-size: 14px; flex-shrink: 0; width: 20px; text-align: center;
+    }
+    .ef-clip-info { flex: 1; min-width: 0; }
+    .ef-clip-name {
+      font-size: 12px; font-weight: 600; color: #1a1a1a;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ef-clip-cat {
+      display: inline-block;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      background: rgba(0,0,0,0.08);
+      color: rgba(0,0,0,0.5);
+      border-radius: 4px; padding: 1px 5px;
+      margin-top: 2px;
+    }
+    .ef-clip-try {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: rgba(0,0,0,0.4);
+      background: rgba(0,0,0,0.08);
+      border: none; border-radius: 6px;
+      padding: 5px 9px; cursor: pointer;
+      flex-shrink: 0;
+    }
+    .ef-clip-try:disabled { opacity: 0.3; cursor: default; }
+    .ef-clip-try.playing  { background: #1a1a1a; color: #f5f0e8; }
+
+    .ef-add-hint {
+      font-size: 11px; color: rgba(0,0,0,0.38);
+      text-align: center; margin-top: 10px;
+      line-height: 1.5;
+    }
+    .ef-clip-file {
+      font-size: 10px; color: rgba(0,0,0,0.35);
+      margin-top: 1px; font-family: monospace;
+    }
+    .ef-setup-guide {
+      display: flex; flex-direction: column; gap: 10px;
+      padding: 4px 0;
+    }
+    .ef-setup-step {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 12px; color: rgba(0,0,0,0.6); line-height: 1.5;
+    }
+    .ef-step-num {
+      background: #1a1a1a; color: #f5f0e8;
+      font-size: 11px; font-weight: 700;
+      border-radius: 50%; width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .ef-code {
+      background: rgba(0,0,0,0.08);
+      border-radius: 6px; padding: 8px 10px;
+      font-family: monospace; font-size: 11px;
+      color: #1a1a1a; word-break: break-all;
+      margin-left: 30px;
+    }
+
     /* Support tab */
     .support-hero {
       text-align: center;
@@ -502,6 +621,8 @@
       <div class="tab-panel" id="tab-sound">
         <div class="section-title">Clock Sound</div>
         <div class="sound-list" id="sound-list"></div>
+
+        <!-- Fun Mode sub-panel -->
         <div id="fun-options">
           <div class="fun-label">Play order</div>
           <div class="order-toggle">
@@ -513,6 +634,17 @@
           <div class="fun-label">Voice preview</div>
           <button id="voice-preview-btn">🔊 Preview your device's voice</button>
           <div id="voice-info">Tap to hear how the voice sounds on your device</div>
+        </div>
+
+        <!-- Extra Fun sub-panel -->
+        <div id="extrafun-options">
+          <div class="fun-label">Play order</div>
+          <div class="ef-order-row">
+            <div class="ef-order-opt selected" data-eforder="random">🎲 Random</div>
+            <div class="ef-order-opt" data-eforder="sequential">➡️ Sequential</div>
+          </div>
+          <div class="ef-section-label">Clip library — <span id="ef-status">loading…</span></div>
+          <div class="ef-clip-list" id="ef-clip-list"></div>
         </div>
       </div>
 
@@ -722,6 +854,13 @@ const SOUNDS = [
     icon: '🎭',
     desc: '150 phrases — snarky, dramatic, silly & more',
     play() { playFunPhrase(); }
+  },
+  {
+    id: 'extrafun',
+    name: 'Extra Fun 🔥',
+    icon: '🎬',
+    desc: 'Your custom audio clips — plug in & play',
+    play() { playExtraFunClip(); }
   },
 ];
 
@@ -957,6 +1096,183 @@ if ('speechSynthesis' in window) {
 }
 
 // ════════════════════════════════════════════
+//  EXTRA FUN — DYNAMIC PLAYLIST
+//  The app reads sounds/playlist.json on load.
+//  Add any .mp3/.ogg to the sounds/ folder and
+//  list the filename in playlist.json — done.
+//
+//  playlist.json format:
+//  ["sound1.mp3", "sound2.mp3", "sound3.mp3"]
+// ════════════════════════════════════════════
+let EXTRA_CLIPS  = [];   // populated after playlist.json loads
+let efOrder      = 'random';
+let efIndex      = 0;
+let efQueue      = [];
+const efCache    = {};   // filename → AudioBuffer
+const efLoading  = {};   // filename → Promise
+
+function buildEfQueue() {
+  efQueue = [...EXTRA_CLIPS].sort(() => Math.random() - 0.5);
+  efIndex = 0;
+}
+
+async function loadClip(clip) {
+  const url = 'sounds/' + clip.file;
+  if (efCache[url]) return efCache[url];
+  if (efLoading[url]) return efLoading[url];
+  efLoading[url] = fetch(url)
+    .then(r => { if (!r.ok) throw new Error('not found'); return r.arrayBuffer(); })
+    .then(ab => audioCtx.decodeAudioData(ab))
+    .then(buf => { efCache[url] = buf; return buf; });
+  return efLoading[url];
+}
+
+function playBuffer(buf) {
+  ensureAudio();
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const g = audioCtx.createGain(); g.gain.value = 1.0;
+  src.connect(g); g.connect(audioCtx.destination);
+  src.start();
+}
+
+function playExtraFunClip() {
+  if (EXTRA_CLIPS.length === 0) return;
+  let clip;
+  if (efOrder === 'random') {
+    if (efIndex >= efQueue.length) buildEfQueue();
+    clip = efQueue[efIndex++];
+  } else {
+    clip = EXTRA_CLIPS[efIndex % EXTRA_CLIPS.length];
+    efIndex++;
+  }
+  ensureAudio();
+  const url = 'sounds/' + clip.file;
+  if (efCache[url]) {
+    playBuffer(efCache[url]);
+  } else {
+    loadClip(clip).then(buf => playBuffer(buf)).catch(() => {
+      // Fallback blip if file is missing
+      const osc = audioCtx.createOscillator();
+      osc.type = 'square'; osc.frequency.value = 440;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+    });
+  }
+}
+
+// ── Playlist loader ──────────────────────────
+// Strips extension to make a readable label:
+// "sound1.mp3" → "Sound 1", "get_chopper.mp3" → "Get Chopper"
+function fileToLabel(filename) {
+  return filename
+    .replace(/\.[^.]+$/, '')           // remove extension
+    .replace(/[_-]/g, ' ')             // underscores/dashes → spaces
+    .replace(/\b\w/g, c => c.toUpperCase()); // Title Case
+}
+
+async function loadPlaylist() {
+  const efClipList = document.getElementById('ef-clip-list');
+  const efStatus   = document.getElementById('ef-status');
+
+  try {
+    const res = await fetch('sounds/playlist.json?nocache=' + Date.now());
+    if (!res.ok) throw new Error('missing');
+    const files = await res.json();
+
+    if (!Array.isArray(files) || files.length === 0) {
+      showEfEmpty(efStatus, efClipList);
+      return;
+    }
+
+    // Build clip objects from filenames
+    EXTRA_CLIPS = files.map((f, i) => ({ id: 'ef_' + i, file: f, label: fileToLabel(f) }));
+    buildEfQueue();
+
+    // Update subtitle
+    efStatus.textContent = `${EXTRA_CLIPS.length} clip${EXTRA_CLIPS.length !== 1 ? 's' : ''} loaded`;
+
+    // Render clip rows
+    efClipList.innerHTML = '';
+    EXTRA_CLIPS.forEach(clip => {
+      const row = document.createElement('div');
+      row.className = 'ef-clip-row';
+      row.innerHTML = `
+        <span class="ef-clip-status" id="efst-${clip.id}">⬜</span>
+        <div class="ef-clip-info">
+          <div class="ef-clip-name">${clip.label}</div>
+          <div class="ef-clip-file">${clip.file}</div>
+        </div>
+        <button class="ef-clip-try" id="eftry-${clip.id}">Try</button>
+      `;
+      const tryBtn    = row.querySelector('.ef-clip-try');
+      const statusEl  = row.querySelector('.ef-clip-status');
+
+      tryBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        ensureAudio();
+        tryBtn.classList.add('playing');
+        tryBtn.textContent = '…';
+        loadClip(clip)
+          .then(buf => {
+            statusEl.textContent = '✅';
+            tryBtn.classList.remove('playing');
+            tryBtn.textContent = 'Try';
+            playBuffer(buf);
+          })
+          .catch(() => {
+            statusEl.textContent = '❌';
+            tryBtn.classList.remove('playing');
+            tryBtn.textContent = 'Missing';
+            tryBtn.disabled = true;
+          });
+      });
+
+      efClipList.appendChild(row);
+
+      // Silently pre-check each file
+      loadClip(clip)
+        .then(() => { statusEl.textContent = '✅'; })
+        .catch(() => { statusEl.textContent = '❌'; });
+    });
+
+  } catch(e) {
+    showEfEmpty(efStatus, efClipList);
+  }
+}
+
+function showEfEmpty(statusEl, listEl) {
+  statusEl.textContent = 'No clips found';
+  listEl.innerHTML = `
+    <div class="ef-setup-guide">
+      <div class="ef-setup-step">
+        <span class="ef-step-num">1</span>
+        <span>Create a <strong>sounds/</strong> folder next to your index.html</span>
+      </div>
+      <div class="ef-setup-step">
+        <span class="ef-step-num">2</span>
+        <span>Drop in your .mp3 files — name them anything you like (e.g. <em>sound1.mp3</em>)</span>
+      </div>
+      <div class="ef-setup-step">
+        <span class="ef-step-num">3</span>
+        <span>Create <strong>sounds/playlist.json</strong> listing your files:</span>
+      </div>
+      <div class="ef-code">["sound1.mp3", "sound2.mp3", "sound3.mp3"]</div>
+      <div class="ef-setup-step">
+        <span class="ef-step-num">4</span>
+        <span>Reload the app — your clips appear here automatically!</span>
+      </div>
+    </div>
+  `;
+}
+
+// Load playlist after page is ready
+window.addEventListener('load', () => loadPlaylist());
+
+// ════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════
 let totalMs    = 10 * 60 * 1000;
@@ -1189,9 +1505,11 @@ THEMES.forEach(theme => {
 });
 
 // Build sound rows
-const soundList = document.getElementById('sound-list');
+const soundList       = document.getElementById('sound-list');
 const funOptionsPanel = document.getElementById('fun-options');
-const orderOpts = document.querySelectorAll('.order-opt');
+const efOptionsPanel  = document.getElementById('extrafun-options');
+const orderOpts       = document.querySelectorAll('.order-opt');
+const efOrderOpts     = document.querySelectorAll('.ef-order-opt');
 
 orderOpts.forEach(opt => {
   opt.addEventListener('click', () => {
@@ -1202,6 +1520,62 @@ orderOpts.forEach(opt => {
     if (currentFunOrder === 'sequential') { funIndex = 0; }
     else buildFunQueue();
   });
+});
+
+efOrderOpts.forEach(opt => {
+  opt.addEventListener('click', () => {
+    efOrderOpts.forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    efOrder = opt.dataset.eforder;
+    if (efOrder === 'sequential') efIndex = 0;
+    else buildEfQueue();
+  });
+});
+
+// Build Extra Fun clip list
+const efClipList = document.getElementById('ef-clip-list');
+EXTRA_CLIPS.forEach(clip => {
+  const row = document.createElement('div');
+  row.className = 'ef-clip-row';
+  row.id = 'efrow-' + clip.id;
+  row.innerHTML = `
+    <span class="ef-clip-status" id="efst-${clip.id}">⬜</span>
+    <div class="ef-clip-info">
+      <div class="ef-clip-name">${clip.label}</div>
+      <span class="ef-clip-cat">${clip.cat}</span>
+    </div>
+    <button class="ef-clip-try" id="eftry-${clip.id}">Try</button>
+  `;
+  const tryBtn = row.querySelector('.ef-clip-try');
+  const statusEl = row.querySelector('.ef-clip-status');
+
+  tryBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    ensureAudio();
+    tryBtn.classList.add('playing');
+    tryBtn.textContent = '…';
+
+    loadClip(clip)
+      .then(buf => {
+        statusEl.textContent = '✅';
+        tryBtn.classList.remove('playing');
+        tryBtn.textContent = 'Try';
+        playBuffer(buf);
+      })
+      .catch(() => {
+        statusEl.textContent = '❌';
+        tryBtn.classList.remove('playing');
+        tryBtn.textContent = 'Missing';
+        tryBtn.disabled = true;
+      });
+  });
+
+  // Try loading silently to update status icon
+  loadClip(clip)
+    .then(() => { statusEl.textContent = '✅'; })
+    .catch(() => { statusEl.textContent = '⬜'; });
+
+  efClipList.appendChild(row);
 });
 
 // Voice preview
@@ -1268,6 +1642,11 @@ voicePreviewBtn.addEventListener('click', () => {
   window.speechSynthesis.speak(utt);
 });
 
+function showSoundSubPanel(soundId) {
+  funOptionsPanel.classList.toggle('visible', soundId === 'fun');
+  efOptionsPanel.classList.toggle('visible', soundId === 'extrafun');
+}
+
 SOUNDS.forEach(sound => {
   const row = document.createElement('div');
   row.className = 'sound-row' + (sound.id === currentSoundId ? ' selected' : '');
@@ -1287,18 +1666,12 @@ SOUNDS.forEach(sound => {
   row.addEventListener('click', () => {
     document.querySelectorAll('.sound-row').forEach(r => r.classList.remove('selected'));
     row.classList.add('selected');
-    // Show/hide fun options
-    if (sound.id === 'fun') {
-      funOptionsPanel.classList.add('visible');
-    } else {
-      funOptionsPanel.classList.remove('visible');
-    }
+    showSoundSubPanel(sound.id);
   });
   soundList.appendChild(row);
 });
 
-// Show fun panel if fun is already selected on load
-if (currentSoundId === 'fun') funOptionsPanel.classList.add('visible');
+showSoundSubPanel(currentSoundId);
 
 cancelBtn.addEventListener('click', () => overlay.classList.remove('open'));
 
@@ -1321,6 +1694,12 @@ applyBtn.addEventListener('click', () => {
       funOrder = currentFunOrder;
       if (funOrder === 'sequential') funIndex = 0;
       else buildFunQueue();
+    }
+    if (currentSoundId === 'extrafun') {
+      const efSel = document.querySelector('.ef-order-opt.selected');
+      if (efSel) { efOrder = efSel.dataset.eforder; }
+      if (efOrder === 'sequential') efIndex = 0;
+      else buildEfQueue();
     }
   }
 
