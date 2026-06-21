@@ -1169,8 +1169,10 @@ function playExtraFunClip() {
 // "sound1.mp3" → "Sound 1", "get_chopper.mp3" → "Get Chopper"
 function fileToLabel(filename) {
   return filename
-    .replace(/\.[^.]+$/, '')           // remove extension
-    .replace(/[_-]/g, ' ')             // underscores/dashes → spaces
+    .replace(/\.[^.]+$/, '')             // remove extension
+    .replace(/\s*\(\d+\)\s*/g, ' ')      // remove (1), (2) duplicates
+    .replace(/[_-]/g, ' ')               // underscores/dashes → spaces
+    .trim()
     .replace(/\b\w/g, c => c.toUpperCase()); // Title Case
 }
 
@@ -1179,7 +1181,7 @@ async function loadPlaylist() {
   const efStatus   = document.getElementById('ef-status');
 
   try {
-    const res = await fetch('sounds/playlist.json?nocache=' + Date.now());
+    const res = await fetch('playlist.json?nocache=' + Date.now());
     if (!res.ok) throw new Error('missing');
     const files = await res.json();
 
